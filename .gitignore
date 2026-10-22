@@ -1,0 +1,18 @@
+# Vendored package dumps (downloaded to inspect the Kaggle runtime API; not our source)
+work/tf5/
+
+# Competition data — regenerable with:
+#   kaggle competitions download -c rmit-hackathon-2026
+work/data/
+*.zip
+
+# Run artifacts, probability dumps and synthetic test fixtures
+kernels/*/out/
+work/_synth_out/
+*.npy
+*.log
+
+# Tooling caches
+.ruff_cache/
+__pycache__/
+*.pyc
