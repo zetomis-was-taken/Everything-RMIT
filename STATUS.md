@@ -243,6 +243,29 @@ pt 0.040 · fr 0.054 · it 0.070 · **en 0.095** (en n=280, std 0.025). So at fo
 **B→J and PI→B counts** (~100 and ~26 per fold, Poisson ±10%); make per-language claims only on full
 5-fold OOF (en n=1400 → ±0.011).
 
+### Paired-comparison rule (supersedes the σ arithmetic above)
+Comparisons run on the **same rows** have correlated errors, so the noise on a *delta* is not the noise on
+either estimate, and a Poisson model on a marginal count is the wrong yardstick. Use `work/compare_pair.py`,
+which resamples rows and recomputes **both** F1s per resample, and reports exact McNemar on discordant pairs.
+
+384 vs 512 on fold 0 (2,800 rows), corrected:
+
+| subset | n | 384 | 512 | delta | paired 95% CI | McNemar | p |
+|---|---|---|---|---|---|---|---|
+| ALL | 2800 | 0.9612 | 0.9669 | +0.0057 | [−0.0037, +0.0151] | 26 / 42 | 0.068 |
+| pt | 1265 | 0.9503 | 0.9565 | +0.0062 | [−0.0048, +0.0168] | 16 / 28 | 0.096 |
+| fr | 713 | 0.9617 | 0.9689 | +0.0073 | [−0.0143, +0.0310] | 4 / 6 | 0.754 |
+| it | 566 | 0.9640 | 0.9906 | +0.0266 | [+0.0071, +0.0517] | 1 / 7 | 0.070 |
+| en | 256 | 0.9969 | 0.9598 | −0.0370 | [−0.0806, −0.0038] | 5 / 1 | 0.219 |
+| **B\|J** | 2604 | 0.6431 | 0.6475 | +0.0044 | [+0.0005, +0.0087] | 21 / 39 | **0.027** |
+
+Reading: no per-language delta is individually supported (CIs cross zero for pt/fr; it and en exclude zero on
+CI but have 8 and 6 discordant rows, so McNemar disagrees). The one result that holds up is the **B↔J
+sub-problem** — restricted to the 2,604 rows whose true label is BENIGN or JAILBREAK, 512 wins with p=0.027.
+So 512 is *free and helps the boundary that holds 81% of the errors*, which is a stronger justification than
+"nearly free". Arms must be compared to **512's counts**, via McNemar on B↔J discordance, and reported with
+the full 3×3 matrix (a weight change can trade one cell for another and still pass a two-cell check).
+
 ### Production
 - [ ] Sharded 5-fold on the winning config (folds 0–2 / 3–4, two kernels).
 - [ ] Merge shards; honest 4-fold multiplier tuning, kept only if it survives held-out scoring.
