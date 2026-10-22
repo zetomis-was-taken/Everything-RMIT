@@ -1,0 +1,12 @@
+{
+  "id": "tkhoikk/rmit-probe-c1",
+  "title": "rmit probe c1",
+  "code_file": "probe2.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": false,
+  "competition_sources": ["rmit-hackathon-2026"],
+  "model_sources": ["aisuko/xlm-roberta-base/transformers/default/1"]
+}

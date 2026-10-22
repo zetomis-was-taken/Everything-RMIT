@@ -1,0 +1,13 @@
+{
+  "id": "tkhoikk/rmit-sgs-ae-do-toc-c1-logbook",
+  "title": "RMIT_SGS_Ae-do-toc_C1_logbook",
+  "code_file": "rmit-sgs-ae-do-toc-c1-logbook.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_internet": false,
+  "competition_sources": [
+    "rmit-hackathon-2026"
+  ]
+}

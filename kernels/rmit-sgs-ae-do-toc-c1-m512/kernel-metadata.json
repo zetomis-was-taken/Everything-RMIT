@@ -1,0 +1,16 @@
+{
+  "id": "tkhoikk/rmit-sgs-ae-do-toc-c1-m512",
+  "title": "RMIT_SGS_Ae-do-toc_C1_m512",
+  "code_file": "train.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": false,
+  "competition_sources": [
+    "rmit-hackathon-2026"
+  ],
+  "model_sources": [
+    "aisuko/mmbert-base/transformers/default/1"
+  ]
+}
