@@ -218,3 +218,47 @@ encoder is mandatory rather than optional.
 **Language-prefix ablation (measured on the cheap model, 5-fold OOF):** raw text 0.9195 → with `[pt]`/`[fr]`
 prefix 0.9226, i.e. **+0.0031**. That is inside fold-to-fold noise (fold spread 0.9136–0.9254, ~±0.005), so
 the honest verdict is *inconclusive but free to test* — it gets one arm on the transformer, not a rewrite.
+
+---
+
+## 10. To-do
+
+Status 04:35 UTC, deadline 11:00 UTC (~6h20m), **0 of 6 daily submissions used**.
+
+### Blocked on the two gates finishing
+- [ ] Gate logs: per-epoch macro-F1 curve, `seconds_per_epoch`, peak GPU, and the `sortish sampler active` line.
+- [ ] Set the epoch count from that curve, not from an assumption of 3 or 5.
+- [ ] Compare 384 vs 512 on overall macro-F1, **pt per-language F1**, PI recall and B→J count.
+      Judge 512 on pt + PI, not macro. XLM-R caps at 514 positions; mmBERT's RoPE has no wall.
+- [ ] Re-derive real cost per 5-fold from the measured `seconds_per_epoch` before queueing production.
+
+### Interventions (single fold, judged on confusion counts, not per-language F1)
+- [ ] Decomposed weights `[0.54, 1.0, 4.76]`: accept only if B→J falls **and** PI→BENIGN (132) does not rise.
+- [ ] Focal loss γ=2 with **reduced** weights (never compound with 4.76).
+- [ ] XLM-R-base **fold-0 A/B** (not a 5-fold); if competitive, treat it as a blend member, not a replacement.
+
+### Rejection rule (replaces "no language drops >0.02")
+Per-language macro-F1 at fold-0 size is too noisy for a 0.02 threshold. Bootstrapped 95% CI width:
+pt 0.040 · fr 0.054 · it 0.070 · **en 0.095** (en n=280, std 0.025). So at fold level judge the
+**B→J and PI→B counts** (~100 and ~26 per fold, Poisson ±10%); make per-language claims only on full
+5-fold OOF (en n=1400 → ±0.011).
+
+### Production
+- [ ] Sharded 5-fold on the winning config (folds 0–2 / 3–4, two kernels).
+- [ ] Merge shards; honest 4-fold multiplier tuning, kept only if it survives held-out scoring.
+- [ ] If XLM-R is competitive: 5-fold it and blend on OOF, accepted only if OOF improves with no language regression.
+
+### Submission
+- [ ] Build `submission.csv` with the assertions intact (6000 rows, label set, id order, no NaN).
+- [ ] Confirm the real team name appears on the leaderboard after the first upload (validates naming).
+- [ ] Team approval before every upload; 6 per day.
+
+### Coordination
+- [ ] Teammate notebook is titled `RMIT_SGS_AnhEmDoToc_C1` while the confirmed team name is `Ae-do-toc` — needs their confirmation.
+- [ ] Their notebook is `COMPLETE` but has **no executed cells and no outputs**; ask them to Save Version with outputs
+      or share their val numbers, so their XLM-R run counts as evidence instead of being duplicated.
+- [ ] Regenerate the logbook and push after each material change (`work/make_logbook.py`).
+
+### Explicitly out of scope
+PI-vs-rest routing (leaves all 786 B↔J errors untouched), per-language heads/thresholds (identical class ratios
+per language), LLM/LoRA fine-tuning (no bf16, 7h window), RemBERT, DeBERTa-PI as primary, 10% holdout, maxlen 256.
