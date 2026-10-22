@@ -248,6 +248,30 @@ pt 0.040 · fr 0.054 · it 0.070 · **en 0.095** (en n=280, std 0.025). So at fo
 - [ ] Merge shards; honest 4-fold multiplier tuning, kept only if it survives held-out scoring.
 - [ ] If XLM-R is competitive: 5-fold it and blend on OOF, accepted only if OOF improves with no language regression.
 
+### External data points (use instead of spending lanes)
+- [x] **XLM-R-base A/B — satisfied by the teammate run** (`reference/teammate/xlmr-base-run-2026-10-22.md`):
+      maxlen 256, 5 epochs, 10% holdout → best epoch 4, **val macro-F1 0.9493** (0.9530 with multipliers
+      fitted on that same split). Do not spend a lane re-running it; a 5-fold XLM-R is only worth it as a
+      **blend member**.
+- [x] `thanhsu263` XLM-R-base log: val 0.9517 at 3 epochs, pt 0.9329 lowest.
+- [x] Host demo `aisuko/rmit-sgs-demo-c1`: xlm-roberta-base on **200 rows**, 1 epoch — a smoke demo, not a baseline.
+
+### What those data points change
+- **Epochs:** the teammate curve peaks at **4** (0.9493) and degrades at 5 (0.9472, val loss 0.2794 → 0.3064,
+  train loss 0.010). Prefer best-checkpoint selection; treat 5 epochs as the ceiling, not the target.
+- **Throughput reconciled:** their 1.09 s/step at maxlen 256 vs our 1.07 s/step at 384 → the length-grouped
+  sampler makes us roughly 1.6x more token-efficient. My earlier "1.6x slower than expected" concern was
+  a bad comparison against a fixed-padding run.
+- **Per-language ranking is unstable across runs:** ours (TF-IDF 5-fold) and `thanhsu263` both put **pt** last
+  (0.896 / 0.933), while the teammate run puts **en** last (0.894, n=139). Three runs, two different "worst"
+  languages → per-language verdicts must wait for 5-fold OOF. pt is the most reliable one per fold (n=1260, std 0.0096).
+- **The B↔J story holds across model families:** 74.5% of the transformer's errors (41/55) and 81.5% of
+  TF-IDF's (786/964), with the same direction of asymmetry (3.1x toward JAILBREAK here). The weight arm stays aimed correctly.
+- **Their run trained with no warmup** — transformers 5 silently dropped `warmup_ratio`. Our `warmup_steps=126` is intact.
+- **Cost re-derived:** at 1.07 s/step, fold 0 is 350 steps/epoch → 5 epochs ≈ 31 min/fold, 4 epochs ≈ 25 min/fold.
+  Sharded 5-fold (3+2 folds across two lanes) is therefore **~95 min at 5 epochs, ~75 min at 4** — not the 50 min I
+  projected from 3 epochs.
+
 ### Submission
 - [ ] Build `submission.csv` with the assertions intact (6000 rows, label set, id order, no NaN).
 - [ ] Confirm the real team name appears on the leaderboard after the first upload (validates naming).
