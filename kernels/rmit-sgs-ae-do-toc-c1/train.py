@@ -68,7 +68,7 @@ USE_CLASS_WEIGHTS = True
 # Explicit weights rather than "balanced": the OOF matrix shows BENIGN->JAILBREAK (502) is 1.8x the
 # reverse, i.e. the JAILBREAK boost over-fires. WEIGHT_PRESET="decomposed" drops only the JAILBREAK
 # boost and holds PROMPT_INJECTION, so the arm isolates one axis at a time.
-WEIGHT_PRESET = "balanced"  # "balanced" | "decomposed" | "uniform"
+WEIGHT_PRESET = "balanced"  # "balanced" | "decomposed" | "sqrt" | "uniform"
 DECOMPOSED_WEIGHTS = [0.54, 1.0, 4.76]  # BENIGN, JAILBREAK, PROMPT_INJECTION
 LOSS_MODE = "weighted_ce"  # "weighted_ce" | "focal"
 USE_LANG_PREFIX = False  # ablation: prepend "[pt] " etc. to the text
@@ -292,6 +292,12 @@ def run_fold(
         weights = compute_class_weight("balanced", classes=np.arange(len(LABELS)), y=train_labels)
     elif WEIGHT_PRESET == "decomposed":
         weights = np.array(DECOMPOSED_WEIGHTS, dtype=np.float64)
+    elif WEIGHT_PRESET == "sqrt":
+        # sqrt of balanced: partial imbalance correction, so it does not compound with
+        # focal loss (which already down-weights easy examples).
+        weights = np.sqrt(
+            compute_class_weight("balanced", classes=np.arange(len(LABELS)), y=train_labels)
+        )
     else:
         weights = np.ones(len(LABELS), dtype=np.float64)
     log(f"fold {fold}: class weights {np.round(weights, 3).tolist()} loss={LOSS_MODE}")
