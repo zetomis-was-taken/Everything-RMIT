@@ -12,21 +12,45 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import ast
 import json
-import re
 from pathlib import Path
 
 CANONICAL_DIR = Path("kernels/rmit-sgs-ae-do-toc-c1")
 KERNELS_DIR = Path("kernels")
 # Constants that may be overridden, with the regex-safe assignment form expected in the source.
-ALLOWED = {"MAXLEN", "EPOCHS", "BATCH_SIZE", "LEARNING_RATE", "WEIGHT_PRESET", "LOSS_MODE", "RUN", "USE_LANG_PREFIX"}
+ALLOWED = {"MAXLEN", "EPOCHS", "BATCH_SIZE", "LEARNING_RATE", "WEIGHT_PRESET", "LOSS_MODE", "RUN",
+           "USE_LANG_PREFIX", "FOLDS_TO_RUN"}
 
 
 def patch_constant(source: str, key: str, value: str) -> str:
-    pattern = re.compile(rf"^{key}\s*=\s*[^\n#]*", re.MULTILINE)
-    if not pattern.search(source):
-        raise SystemExit(f"constant {key!r} not found in train.py")
-    return pattern.sub(f"{key} = {value} ", source, count=1)
+    """Replace a module-level constant assignment by line number (AST-located).
+
+    Pattern matching was unsafe: the module docstring documents the RUN values as
+    ``RUN="full" : ...``, so a regex anchored on ``^RUN`` rewrote the docstring and
+    left the real assignment untouched.
+    """
+    try:
+        tree = ast.parse(source)
+    except SyntaxError as error:
+        raise SystemExit(f"variant source is not valid Python: {error}") from error
+
+    target_line: int | None = None
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            names = [t.id for t in node.targets if isinstance(t, ast.Name)]
+            if key in names:
+                target_line = node.lineno
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            if node.target.id == key:
+                target_line = node.lineno
+    if target_line is None:
+        raise SystemExit(f"constant {key!r} not found at module level in train.py")
+
+    lines = source.splitlines()
+    lines[target_line - 1] = f"{key} = {value}"
+    rebuilt = "\n".join(lines)
+    return rebuilt + "\n" if source.endswith("\n") else rebuilt
 
 
 def main() -> None:
