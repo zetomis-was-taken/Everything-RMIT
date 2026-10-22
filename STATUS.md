@@ -266,6 +266,26 @@ So 512 is *free and helps the boundary that holds 81% of the errors*, which is a
 "nearly free". Arms must be compared to **512's counts**, via McNemar on B↔J discordance, and reported with
 the full 3×3 matrix (a weight change can trade one cell for another and still pass a two-cell check).
 
+### Arm verdicts (fold 0, maxlen 512, 5 epochs, vs baseline 512 = 0.9669 / 80 errors)
+
+| run | macro-F1 | delta | paired CI | McNemar | B→J | J→B | PI→B | verdict |
+|---|---|---|---|---|---|---|---|---|
+| baseline 512 (balanced) | 0.9669 | — | — | — | 38 | 27 | 9 | reference |
+| `-wdec` `[0.54,1.0,4.76]` | 0.9657 | −0.0012 | [−0.0087,+0.0068] | 31/27 p=0.694 | 40 ↑ | 29 ↑ | 7 ↓ | **reject** |
+| `-focal` γ=2, sqrt weights | 0.9705 | +0.0036 | [−0.0041,+0.0116] | 31/27 p=0.694 | 45 ↑ | 31 ↑ | 5 ↓ | **reject** |
+
+Both arms are statistically indistinguishable from the baseline (identical discordant totals, p=0.69 — different rows
+changed in each case, same 31 lost / 27 gained). Neither reduced B→J; both increased it.
+
+**The substantive finding:** dropping the JAILBREAK boost (`1.075 → 1.0`) did **not** reduce BENIGN→JAILBREAK
+over-prediction (38 → 40). So the B→J asymmetry is **not a class-weight artefact** — it is intrinsic model
+behaviour on this boundary. That retires the main hypothesis behind the weight arm.
+
+Focal lifted PROMPT_INJECTION (0.9612 → 0.9794) and English (+0.040, but 5 discordant rows), while degrading the
+B↔J cell — i.e. it bought the easy class at the expense of the hard one. Not adopted.
+
+**Decision: production config = baseline 512** (mmBERT-base, maxlen 512, 5 epochs, balanced weights).
+
 ### Production
 - [ ] Sharded 5-fold on the winning config (folds 0–2 / 3–4, two kernels).
 - [ ] Merge shards; honest 4-fold multiplier tuning, kept only if it survives held-out scoring.
